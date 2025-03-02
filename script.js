@@ -79,9 +79,10 @@ const questions = [
   },
   {
     id: "days",
-    question: "Select a day:",
+    question: "Select one or more days:",
     condition: (answers) => answers.passType === "1-Day Pass",
     options: days,
+    max: days.length, // Allow multiple selections
   },
   {
     id: "days",
@@ -99,9 +100,10 @@ const questions = [
   },
   {
     id: "weeks",
-    question: "Select a week:",
+    question: "Select one or more weeks:",
     condition: (answers) => answers.passType === "Weekly",
     options: weeks,
+    max: weeks.length, // Allow selecting multiple weeks
   },
   {
     id: "time",
@@ -249,7 +251,7 @@ function handleInput(id, value, max) {
     if (answers[id].includes(value)) {
       answers[id] = answers[id].filter((v) => v !== value);
     } else {
-      if (answers[id].length < max) {
+      if (id === "weeks" || answers[id].length < max) {
         answers[id].push(value);
       } else {
         alert(`You can only select up to ${max} options.`);
@@ -277,7 +279,10 @@ function updateButtons() {
 
   nextBtn.disabled =
     (!answers[questionData.id] && questionData.id !== "numKids") ||
-    (questionData.max && answers[questionData.id]?.length !== questionData.max);
+    (questionData.max &&
+      questionData.id !== "weeks" &&
+      questionData.id !== "days" &&
+      answers[questionData.id]?.length !== questionData.max);
 
   prevBtn.disabled = currentStep === 0;
 }
@@ -327,7 +332,6 @@ function calculateTotal() {
     "Early Check-in": 50, // Charged once per family
   };
 
-  // Store unique selections
   let selectedDays = answers.days
     ? Array.isArray(answers.days)
       ? answers.days
@@ -339,6 +343,8 @@ function calculateTotal() {
       : [answers.weeks]
     : [];
 
+  let numWeeks = selectedWeeks.length;
+
   for (let i = 1; i <= numKids; i++) {
     let kidCost = 0;
     let kidBreakdown = [];
@@ -348,15 +354,38 @@ function calculateTotal() {
 
       if (passType === "4-Week Promo") {
         baseCost *= 4;
-      }
+      } else if (passType === "Weekly") {
+        baseCost *= selectedWeeks.length;
+      } else if (passType === "1-Day Pass") {
+        let numDays = selectedDays.length;
+        let numThreeDaySets = Math.floor(numDays / 3);
+        let remainingDays = numDays % 3;
 
-      kidCost += baseCost;
-      kidBreakdown.push(`${passType} (${timeType}): $${baseCost}`);
+        let discountCost = numThreeDaySets * prices["3-Day Pass"][timeType];
+        let regularDayCost = remainingDays * prices["1-Day Pass"][timeType];
+
+        let baseCost = discountCost + regularDayCost;
+
+        kidBreakdown.push(
+          `${numThreeDaySets} x 3-Day Discount (${timeType}): $${discountCost}`
+        );
+        if (remainingDays > 0) {
+          kidBreakdown.push(
+            `${remainingDays} x 1-Day Pass (${timeType}): $${regularDayCost}`
+          );
+        }
+
+        kidCost += baseCost;
+      } else {
+        kidBreakdown.push(`${passType} (${timeType}): $${baseCost}`);
+        kidCost += baseCost;
+      }
     }
 
     if (answers.returning === "Yes") {
-      kidCost -= returningDiscount;
-      kidBreakdown.push(`Returning Discount: -$${returningDiscount}`);
+      let discount = returningDiscount * numWeeks;
+      kidCost -= discount;
+      kidBreakdown.push(`Returning Discount (-$${discount})`);
     }
 
     total += kidCost;
@@ -367,7 +396,6 @@ function calculateTotal() {
     );
   }
 
-  // Charge early check-in once
   if (answers.earlyCheckin === "Yes") {
     total += prices["Early Check-in"];
     breakdown.push(
@@ -375,7 +403,6 @@ function calculateTotal() {
     );
   }
 
-  // Display selected days or weeks
   if (selectedDays.length > 0) {
     breakdown.push(
       `<li><strong>Selected Days:</strong> ${selectedDays.join(", ")}</li>`
