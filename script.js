@@ -340,6 +340,7 @@ function calculateTotal() {
   let numKids = parseInt(answers.numKids) || 1;
   let returningDiscount = answers.returning === "Yes" ? 10 : 0;
   let siblingDiscount = numKids > 1 ? 10 : 0;
+  let earlyCheckinCost = 50;
 
   let selectedDays = answers.days
     ? Array.isArray(answers.days)
@@ -451,6 +452,30 @@ function calculateTotal() {
     total += kidCost;
     breakdownText += "</ul></li>";
     breakdown.push(breakdownText);
+  }
+
+  if (answers.earlyCheckin === "Yes") {
+    let earlyCheckinTotal = 0;
+    if (passType === "Weekly") {
+      earlyCheckinTotal = selectedWeeks.reduce((sum, week) => {
+        return (
+          sum +
+          (shortWeeks.includes(week)
+            ? (4 / 5) * earlyCheckinCost
+            : week === week12
+            ? (2 / 5) * earlyCheckinCost
+            : earlyCheckinCost)
+        );
+      }, 0);
+    } else if (passType === "1-Day Pass" || passType === "3-Day Pass") {
+      earlyCheckinTotal = (numDays / 5) * earlyCheckinCost;
+    }
+    total += earlyCheckinTotal;
+    breakdown.push(
+      `<li>Early Check-in: +$${earlyCheckinTotal.toFixed(
+        2
+      )} ($50 per full week or adjusted for selected days)</li>`
+    );
   }
 
   questionContainer.innerHTML = `
