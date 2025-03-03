@@ -433,19 +433,16 @@ function calculateTotal() {
       }
     });
 
-    let applicableWeeks =
-      passType === "Weekly" ? numWeeks : Math.ceil(numDays / 5);
-
     if (answers.returning === "Yes") {
-      let discount = returningDiscount * applicableWeeks;
+      let discount = returningDiscount * numWeeks;
       kidCost -= discount;
-      breakdownText += `<li>Returning Discount (-$${discount}) (-$10 per week per kid)</li>`;
+      breakdownText += `<li>Returning Discount (-$${discount})</li>`;
     }
 
     if (numKids > 1) {
-      let siblingDisc = siblingDiscount * (numKids - 1) * applicableWeeks;
+      let siblingDisc = siblingDiscount * (numKids - 1) * numWeeks;
       kidCost -= siblingDisc;
-      breakdownText += `<li>Sibling Discount (-$${siblingDisc}) (-$10 per week per kid)</li>`;
+      breakdownText += `<li>Sibling Discount (-$${siblingDisc})</li>`;
     }
 
     total += kidCost;
