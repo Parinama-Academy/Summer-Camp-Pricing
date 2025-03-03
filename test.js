@@ -373,13 +373,6 @@ function calculateTotal() {
             `${remainingDays} x 1-Day Pass (${timeType}): $${regularDayCost}`
           );
         }
-      } else if (passType === "3-Day Pass") {
-        if (selectedDays.length !== 3) {
-          alert("You must select exactly 3 days for a 3-Day Pass.");
-          return;
-        }
-        baseCost = prices["3-Day Pass"][timeType];
-        kidBreakdown.push(`3-Day Pass (${timeType}): $${baseCost}`);
       } else if (numWeeks >= 4) {
         let numFourWeekPromos = Math.floor(numWeeks / 4);
         let remainingWeeks = numWeeks % 4;
